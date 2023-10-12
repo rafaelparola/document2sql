@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Column;
 import jakarta.persistence.GenerationType;
 
-@Entity
+@Entity(name="JSON_SCHEMA")
 public class JsonSchema {
 
     @Id

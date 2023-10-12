@@ -1,5 +1,8 @@
 package com.parola.document2sql.mapper.controller;
 
+import com.parola.document2sql.mapper.repository.SqlSchemaRepository;
+import com.parola.document2sql.mapper.service.JsonSchemaService;
+import com.parola.document2sql.mapper.service.SqlSchemaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,19 +18,20 @@ import com.parola.document2sql.mapper.entity.JsonSchema;
 public class JsonSchemaController {
 
     @Autowired
-    JsonSchemaRepository jsonSchemaRepository;
-
+    JsonSchemaService jsonSchemaService;
 
     @PostMapping("/load")
     public ResponseEntity<String> loadJsonSchema(@RequestBody Map<String, Object> payload){
-
-        // Generates a JsonSchema Object and populates the schema attribute with the mongo db schema input
-        JsonSchema jsonSchema = new JsonSchema();
-        jsonSchema.setSchema(payload.toString());
-
         // Persist the schema in the database
-        jsonSchemaRepository.save(jsonSchema);
+        jsonSchemaService.saveJsonSchema(payload);
 
         return ResponseEntity.status(HttpStatus.OK).body("The schema was successfully loaded");
+    }
+
+    @GetMapping("/map-to-sql/{schemaId}")
+    public ResponseEntity<String> mapToSql(@PathVariable long schemaId){
+        jsonSchemaService.mapToSql(schemaId);
+
+        return ResponseEntity.status(HttpStatus.OK).body("The mapping was succesfull");
     }
 }
