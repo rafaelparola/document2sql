@@ -13,15 +13,26 @@ public class SqlColumn {
     @Column
     private String dataType;
     @Column
-    private boolean nullable;
+    private boolean isNullable;
+    @Column
+    private boolean isPk;
+    @Column
+    private boolean isFk;
+    @Column
+    private boolean isUnique;
+
     @ManyToOne
     private SqlTable sqlTable;
 
-    public SqlColumn(String name, String dataType, boolean nullable, SqlTable sqlTable) {
+
+    public SqlColumn(String name, String dataType, boolean isPk, boolean isFk, boolean isUnique, boolean isNullable, SqlTable sqlTable) {
         this.name = name;
         this.dataType = dataType;
-        this.nullable = nullable;
+        this.isNullable = isNullable;
         this.sqlTable = sqlTable;
+        this.isPk = isPk;
+        this.isFk = isFk;
+        this.isUnique = isUnique;
     }
 
     public SqlColumn() {
@@ -44,12 +55,12 @@ public class SqlColumn {
         this.dataType = dataType;
     }
 
-    public boolean isNullable() {
-        return nullable;
+    public boolean isIsNullable() {
+        return isNullable;
     }
 
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
+    public void setIsNullable(boolean nullable) {
+        this.isNullable = nullable;
     }
 
     public long getId() {
@@ -66,5 +77,29 @@ public class SqlColumn {
 
     public void setSqlTable(SqlTable sqlTable) {
         this.sqlTable = sqlTable;
+    }
+
+    public boolean isIsPk() {
+        return isPk;
+    }
+
+    public void setIsPk(boolean pk) {
+        this.isPk = pk;
+    }
+
+    public boolean isIsFk() {
+        return isFk;
+    }
+
+    public void setIsFk(boolean fk) {
+        this.isFk = fk;
+    }
+
+    public boolean isIsUnique() {
+        return isUnique;
+    }
+
+    public void setIsUnique(boolean unique) {
+        this.isUnique = unique;
     }
 }
