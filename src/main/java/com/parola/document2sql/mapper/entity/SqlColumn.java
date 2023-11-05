@@ -12,8 +12,8 @@ public class SqlColumn {
     private String name;
     @Column
     private String dataType;
-    @Column
-    private boolean isNullable;
+    @Column(columnDefinition = "boolean default true")
+    private boolean isNullable = true;
     @Column
     private boolean isPk;
     @Column

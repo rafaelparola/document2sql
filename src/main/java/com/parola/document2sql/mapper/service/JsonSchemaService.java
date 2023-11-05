@@ -109,26 +109,40 @@ public class JsonSchemaService {
         System.out.println(node.isObject());
         System.out.println(node.getNodeType());
 
-        System.out.println(node.get("restaurants"));
-        JsonNode restaurants = node.get("restaurants");
+        //System.out.println(node.get("restaurants"));
+        //JsonNode restaurants = node.get("restaurants");
+        //JsonNode neighborhoods = node.get("neighborhoods");
 
-        SqlTable sqlTable = new SqlTable("restaurants");
-        this.createSqlObjects(restaurants, sqlTable);
+        for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+            String tableName = it.next();
+            SqlTable sqlTable = new SqlTable(tableName);
+            JsonNode tableNode = node.get(tableName);
+            this.createSqlObjects(tableNode, sqlTable);
+        }
 
-        //createSqlObjects(restaurants);
+        /*SqlTable sqlTable = new SqlTable("restaurants");
+        //SqlTable sqlTable = new SqlTable("neighborhoods");
+        this.createSqlObjects(restaurants, sqlTable);*/
 
     }
 
     public void createSqlObjects(JsonNode schema) {
-        createSqlObjects(schema, null);
-    }
-
+                createSqlObjects(schema, null);
+            }
 
     public void createSqlObjectsArray(JsonNode schema, SqlTable parentTable) {
-        for (Iterator<String> it = schema.fieldNames(); it.hasNext(); ) {
-            String type = it.next();
+        // Creates the table primary key
+        SqlColumn primaryKey = new SqlColumn();
+        primaryKey.setName("id");
+        primaryKey.setIsPk(true);
+        primaryKey.setDataType("UUID");
+        primaryKey.setSqlTable(parentTable);
+        parentTable.setColumn(primaryKey);
 
-            if(type != OBJECT && type != ARRAY) {
+        for (Iterator<String> it = schema.fieldNames(); it.hasNext(); ) {
+                    String type = it.next();
+
+            if(type != OBJECT && type != ARRAY && type != "Null") {
                 SqlColumn column = new SqlColumn();
 
                 column.setName(parentTable.getName() + type);
@@ -140,6 +154,21 @@ public class JsonSchemaService {
             if(type == OBJECT) {
                 SqlTable childTable = new SqlTable(parentTable.getName() + type);
 
+                // Creates the relation between child table and parent table (Change later)
+                SqlRelation relation = new SqlRelation();
+                // If it is one array containing multiple objects is 1-N
+                relation.setType("N-1");
+                relation.setReferencedTable(parentTable);
+                childTable.setRelation(relation);
+
+                // Creates child table reference key
+                SqlColumn foreignKey = new SqlColumn();
+                foreignKey.setName(parentTable.getName()+"_id");
+                foreignKey.setIsFk(true);
+                foreignKey.setDataType("UUID");
+                foreignKey.setSqlTable(childTable);
+                childTable.setColumn(foreignKey);
+
                 JsonNode structure = this.getArrayObjectStructure(schema);
 
                 this.createSqlObjects(structure, childTable);
@@ -150,6 +179,14 @@ public class JsonSchemaService {
     }
 
     public void createSqlObjects(JsonNode schema, SqlTable parentTable) {
+        // Creates the table primary key
+        SqlColumn primaryKey = new SqlColumn();
+        primaryKey.setName("id");
+        primaryKey.setIsPk(true);
+        primaryKey.setDataType("UUID");
+        primaryKey.setSqlTable(parentTable);
+        parentTable.setColumn(primaryKey);
+
         for (Iterator<String> it = schema.fieldNames(); it.hasNext(); ) {
 
             // Get the actual Object
@@ -161,7 +198,7 @@ public class JsonSchemaService {
                 // Get the first type in string (Change later)
                 String  type = getStringObjectType(nodeType);
 
-                if (type != OBJECT && type != ARRAY) {
+                if (type != OBJECT && type != ARRAY && type != "Null") {
 
                     // Creates the column object
                     SqlColumn column = new SqlColumn();
@@ -179,6 +216,11 @@ public class JsonSchemaService {
                     }
 
                     column.setName(fieldName);
+                    if(type == "number"){
+                        column.setDataType("float");
+                    } else {
+                        column.setDataType(type);
+                    }
                     column.setSqlTable(parentTable);
                     // Populates the table object with the column object
                     parentTable.setColumn(column);
@@ -189,10 +231,20 @@ public class JsonSchemaService {
 
                     // Creates the relation between child table and parent table (Change later)
                     SqlRelation relation = new SqlRelation();
-                    // Investigar melhor como fazer 1-1
+                    // If it is one object containing one object is 1-1????
+                    // Perguntar ao professor como é possível realizar uma 1-1 nesse cenário
+                    // N pra um zips vai possuir muitos loc
                     relation.setType("1-N");
                     relation.setReferencedTable(parentTable);
                     childTable.setRelation(relation);
+
+                    // Creates child table reference key
+                    SqlColumn foreignKey = new SqlColumn();
+                    foreignKey.setName(parentTable.getName()+"_id");
+                    foreignKey.setIsFk(true);
+                    foreignKey.setDataType("UUID");
+                    foreignKey.setSqlTable(childTable);
+                    childTable.setColumn(foreignKey);
 
                     // Get the childNodeStructure
                     JsonNode childNodeStructure = this.getObjectStructure(fieldNameNode);
@@ -212,154 +264,8 @@ public class JsonSchemaService {
                 sqlTableRepository.save(parentTable);
 
             }
-
-
-
-/*
-            JsonNode nodeStructure = null;
-
-            if (fieldName != "_id") {
-                System.out.println(nodeType.fieldNames().next());
-                if (nodeType.fieldNames().next() == OBJECT ) {
-                    // Creates child table
-                    SqlTable childTable = new SqlTable(fieldName);
-                    // Creates the relation
-                    SqlRelation sqlRelation = new SqlRelation();
-                    sqlRelation.setType("ManyToOne");
-                    // Set the relation between two tables
-                    sqlRelation.setReferencedTable(parentTable);
-                    childTable.setRelation(sqlRelation);
-
-                    nodeStructure = getStructure(nodeType, type);
-                    System.out.println(nodeStructure);
-                    //if (fieldName!)
-                    createSqlObjects(nodeStructure, childTable);
-                } else if (nodeType.fieldNames().next() == ARRAY) {
-
-
-                    //--if(fieldName == OBJECT || fieldName == ARRAY){
-                    fieldName = parentTable.getName();
-                    //}
-
-                    // Creates child table
-                    *//**//*SqlTable childTable = null;
-                    if(type != OBJECT && type != ARRAY) {
-                        childTable = new SqlTable(fieldName);
-
-                        // Creates the relation
-                        SqlRelation sqlRelation = new SqlRelation();
-                        sqlRelation.setType("ManyToOne");
-                        // Set the relation between two tables
-                        sqlRelation.setReferencedTable(parentTable);
-                        childTable.setRelation(sqlRelation);
-                    }*//**//*
-
-
-
-                    nodeStructure = getStructure(nodeType, type);
-                    nodeStructure = getNodeObjectType(nodeStructure);
-                    System.out.println(nodeStructure);
-
-                    //if (childTable != null){
-                    //    createSqlObjects(nodeStructure, childTable);
-                    createSqlObjects(nodeStructure, parentTable);
-                    //}*//*
-
-                }
-                else {
-                    //if(fieldName == OBJECT || fieldName == ARRAY){
-                    fieldName = parentTable.getName();
-                    //}
-                    *//*SqlColumn sqlColumn = new SqlColumn();
-                    sqlColumn.setName(fieldName);
-                    sqlColumn.set*//*
-                    parentTable.setColumn(new SqlColumn(fieldName, nodeType.fieldNames().next(), true, parentTable));
-                }*/
-                //sqlTableRepository.save(parentTable);
-
-
         }
     }
-
-    /*public void createSqlObjects(JsonNode schema, SqlTable parentTable) {
-        for (Iterator<String> it = schema.fieldNames(); it.hasNext(); ) {
-            String fieldName = it.next();
-            System.out.println(fieldName);
-            //System.out.println(schema.get(fieldName));
-            //System.out.println(getNodeObjectType(schema.get(fieldName)));
-            //System.out.println(TYPES);
-            JsonNode nodeType = null;
-            if (schema.get(fieldName).fieldNames().next() == TYPES) {
-                nodeType = getNodeObjectType(schema.get(fieldName));
-            } else {
-                nodeType = schema;
-            }
-            //JsonNode nodeType = getNodeObjectType(schema.get(fieldName));
-            String  type = getStringObjectType(nodeType);
-            JsonNode nodeStructure = null;
-
-            if (fieldName != "_id") {
-                System.out.println(nodeType.fieldNames().next());
-                if (nodeType.fieldNames().next() == OBJECT ) {
-                    // Creates child table
-                    SqlTable childTable = new SqlTable(fieldName);
-                    // Creates the relation
-                    SqlRelation sqlRelation = new SqlRelation();
-                    sqlRelation.setType("ManyToOne");
-                    // Set the relation between two tables
-                    sqlRelation.setReferencedTable(parentTable);
-                    childTable.setRelation(sqlRelation);
-
-                    nodeStructure = getStructure(nodeType, type);
-                    System.out.println(nodeStructure);
-                    //if (fieldName!)
-                    createSqlObjects(nodeStructure, childTable);
-                } else if (nodeType.fieldNames().next() == ARRAY) {
-
-
-                    //--if(fieldName == OBJECT || fieldName == ARRAY){
-                    fieldName = parentTable.getName();
-                    //}
-
-                    // Creates child table
-                    *//*SqlTable childTable = null;
-                    if(type != OBJECT && type != ARRAY) {
-                        childTable = new SqlTable(fieldName);
-
-                        // Creates the relation
-                        SqlRelation sqlRelation = new SqlRelation();
-                        sqlRelation.setType("ManyToOne");
-                        // Set the relation between two tables
-                        sqlRelation.setReferencedTable(parentTable);
-                        childTable.setRelation(sqlRelation);
-                    }*//*
-
-
-
-                    nodeStructure = getStructure(nodeType, type);
-                    nodeStructure = getNodeObjectType(nodeStructure);
-                    System.out.println(nodeStructure);
-
-                    //if (childTable != null){
-                    //    createSqlObjects(nodeStructure, childTable);
-                    createSqlObjects(nodeStructure, parentTable);
-                    //}
-
-                }
-                else {
-                    //if(fieldName == OBJECT || fieldName == ARRAY){
-                    fieldName = parentTable.getName();
-                    //}
-                    *//*SqlColumn sqlColumn = new SqlColumn();
-                    sqlColumn.setName(fieldName);
-                    sqlColumn.set*//*
-                    parentTable.setColumn(new SqlColumn(fieldName, nodeType.fieldNames().next(), true, parentTable));
-                }
-                sqlTableRepository.save(parentTable);
-            }
-
-        }
-    }*/
 
     // Não esquecer que existem fields com mais de um tipo ex numero e string
     public JsonNode getNodeObjectType(JsonNode node) {
