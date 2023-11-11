@@ -158,7 +158,7 @@ public class JsonSchemaService {
                 parentTable.setColumn(column);
             }
             if(type == OBJECT) {
-                SqlTable childTable = new SqlTable(parentTable.getName() + "_detail");
+                /*SqlTable childTable = new SqlTable(parentTable.getName() + "_detail");
                 childTable.setCreatedDateAndTime(new Date());
 
                 // Creates the relation between child table and parent table (Change later)
@@ -174,11 +174,11 @@ public class JsonSchemaService {
                 foreignKey.setIsFk(true);
                 foreignKey.setDataType("UUID");
                 foreignKey.setSqlTable(childTable);
-                childTable.setColumn(foreignKey);
+                childTable.setColumn(foreignKey);*/
 
                 JsonNode structure = this.getArrayObjectStructure(schema);
 
-                this.createSqlObjects(structure, childTable);
+                this.createSqlObjects(structure, parentTable);
             }
 
         }
@@ -187,12 +187,15 @@ public class JsonSchemaService {
 
     public void createSqlObjects(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
-        SqlColumn primaryKey = new SqlColumn();
-        primaryKey.setName(parentTable.getName()+"_gen_uuid");
-        primaryKey.setIsPk(true);
-        primaryKey.setDataType("UUID");
-        primaryKey.setSqlTable(parentTable);
-        parentTable.setColumn(primaryKey);
+
+        if (!parentTable.getColumns().stream().anyMatch(SqlColumn::isIsPk)) {
+            SqlColumn primaryKey = new SqlColumn();
+            primaryKey.setName(parentTable.getName()+"_gen_uuid");
+            primaryKey.setIsPk(true);
+            primaryKey.setDataType("UUID");
+            primaryKey.setSqlTable(parentTable);
+            parentTable.setColumn(primaryKey);
+        }
 
         for (Iterator<String> it = schema.fieldNames(); it.hasNext(); ) {
 
@@ -234,7 +237,7 @@ public class JsonSchemaService {
 
                 } else if (type == OBJECT) {
                     // Creates child table
-                    SqlTable childTable = new SqlTable(fieldName.replace(" ", "_"));
+                    SqlTable childTable = new SqlTable(parentTable.getName() +"__"+ fieldName.replace(" ", "_"));
                     childTable.setCreatedDateAndTime(new Date());
 
                     // Creates the relation between child table and parent table (Change later)
@@ -258,9 +261,25 @@ public class JsonSchemaService {
                     JsonNode childNodeStructure = this.getObjectStructure(fieldNameNode);
                     this.createSqlObjects(childNodeStructure, childTable);
                 } else if (type == ARRAY) {
-                    SqlTable childArrayTable = new SqlTable(fieldName.replace(" ", "_"));
+                    SqlTable childArrayTable = new SqlTable(parentTable.getName() +"__"+fieldName.replace(" ", "_"));
+
+                    // Creates child table reference key
+                    SqlColumn foreignKey = new SqlColumn();
+                    foreignKey.setName(parentTable.getName()+"_id");
+                    foreignKey.setIsFk(true);
+                    foreignKey.setDataType("UUID");
+                    foreignKey.setSqlTable(childArrayTable);
+                    childArrayTable.setColumn(foreignKey);
 
                     // Creates the relation between child table and parent table (Change later)
+                    SqlRelation relation = new SqlRelation();
+                    // If it is one object containing one object is 1-1????
+                    // Perguntar ao professor como é possível realizar uma 1-1 nesse cenário
+                    // N pra um zips vai possuir muitos loc
+                    relation.setType("1-N");
+                    relation.setReferencedTable(parentTable);
+                    childArrayTable.setRelation(relation);
+
 
                     // Gets Array Structure
                     JsonNode arrayStructure = getArrayStructure(fieldNameNode);
