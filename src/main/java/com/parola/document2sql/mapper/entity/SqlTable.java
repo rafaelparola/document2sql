@@ -2,8 +2,10 @@ package com.parola.document2sql.mapper.entity;
 
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity(name="SQL_TABLE")
@@ -14,6 +16,11 @@ public class SqlTable {
     private long id;
     @Column
     private String name;
+
+    @CreationTimestamp
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_date_time")
+    private Date createdDateAndTime;
 
     @OneToMany(cascade=CascadeType.ALL, mappedBy = "sqlTable")
     private List<SqlColumn> columns;
@@ -63,5 +70,13 @@ public class SqlTable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Date getCreatedDateAndTime() {
+        return createdDateAndTime;
+    }
+
+    public void setCreatedDateAndTime(Date createdDateAndTime) {
+        this.createdDateAndTime = createdDateAndTime;
     }
 }

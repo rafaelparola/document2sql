@@ -114,8 +114,9 @@ public class JsonSchemaService {
         //JsonNode neighborhoods = node.get("neighborhoods");
 
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-            String tableName = it.next();
+            String tableName = it.next().replace(" ", "_");
             SqlTable sqlTable = new SqlTable(tableName);
+            sqlTable.setCreatedDateAndTime(new Date());
             JsonNode tableNode = node.get(tableName);
             this.createSqlObjects(tableNode, sqlTable);
         }
@@ -133,7 +134,7 @@ public class JsonSchemaService {
     public void createSqlObjectsArray(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
         SqlColumn primaryKey = new SqlColumn();
-        primaryKey.setName("id");
+        primaryKey.setName(parentTable.getName()+"_gen_uuid");
         primaryKey.setIsPk(true);
         primaryKey.setDataType("UUID");
         primaryKey.setSqlTable(parentTable);
@@ -145,14 +146,20 @@ public class JsonSchemaService {
             if(type != OBJECT && type != ARRAY && type != "Null") {
                 SqlColumn column = new SqlColumn();
 
-                column.setName(parentTable.getName() + type);
+                column.setName(parentTable.getName().replace(" ", "_") + type);
+                if(type == "number"){
+                    column.setDataType("float");
+                } else {
+                    column.setDataType(type);
+                }
                 column.setSqlTable(parentTable);
 
                 // Set the column object in the parent table
                 parentTable.setColumn(column);
             }
             if(type == OBJECT) {
-                SqlTable childTable = new SqlTable(parentTable.getName() + type);
+                SqlTable childTable = new SqlTable(parentTable.getName() + "_detail");
+                childTable.setCreatedDateAndTime(new Date());
 
                 // Creates the relation between child table and parent table (Change later)
                 SqlRelation relation = new SqlRelation();
@@ -181,7 +188,7 @@ public class JsonSchemaService {
     public void createSqlObjects(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
         SqlColumn primaryKey = new SqlColumn();
-        primaryKey.setName("id");
+        primaryKey.setName(parentTable.getName()+"_gen_uuid");
         primaryKey.setIsPk(true);
         primaryKey.setDataType("UUID");
         primaryKey.setSqlTable(parentTable);
@@ -204,7 +211,7 @@ public class JsonSchemaService {
                     SqlColumn column = new SqlColumn();
 
                     for (Iterator<String> attribute = fieldNameNode.fieldNames(); attribute.hasNext();) {
-                        String attributeName = attribute.next();
+                        String attributeName = attribute.next().replace(" ", "_");
                         if (attributeName == PRIMARY_KEY){
                             column.setIsPk(true);
                         } else if (attributeName == FOREIGN_KEY) {
@@ -215,7 +222,7 @@ public class JsonSchemaService {
                         }
                     }
 
-                    column.setName(fieldName);
+                    column.setName(fieldName.replace(" ", "_"));
                     if(type == "number"){
                         column.setDataType("float");
                     } else {
@@ -227,7 +234,8 @@ public class JsonSchemaService {
 
                 } else if (type == OBJECT) {
                     // Creates child table
-                    SqlTable childTable = new SqlTable(fieldName);
+                    SqlTable childTable = new SqlTable(fieldName.replace(" ", "_"));
+                    childTable.setCreatedDateAndTime(new Date());
 
                     // Creates the relation between child table and parent table (Change later)
                     SqlRelation relation = new SqlRelation();
@@ -250,7 +258,7 @@ public class JsonSchemaService {
                     JsonNode childNodeStructure = this.getObjectStructure(fieldNameNode);
                     this.createSqlObjects(childNodeStructure, childTable);
                 } else if (type == ARRAY) {
-                    SqlTable childArrayTable = new SqlTable(fieldName);
+                    SqlTable childArrayTable = new SqlTable(fieldName.replace(" ", "_"));
 
                     // Creates the relation between child table and parent table (Change later)
 
