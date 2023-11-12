@@ -35,53 +35,6 @@ public class DynamicMongoService {
 
     //SqlRelation sqlRelation;
 
-    /*public void analyzeCollectionCardinality(String collectionName) {
-        MongoDatabase database = mongoTemplate.getDb();
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-
-        // For structures with identifiable unique keys
-        Map<String, Set<Object>> uniqueObjectTracker = new HashMap<>();
-        // For structures without identifiable unique keys, using string representation as a "structure hash"
-        Map<String, Map<String, Integer>> subDocumentStructureOccurrences = new HashMap<>();
-        // For arrays, tracking their "structure hash"
-        Map<String, Map<String, Integer>> arrayStructureOccurrences = new HashMap<>();
-
-        FindIterable<Document> documents = collection.find();
-        for (Document document : documents) {
-            analyzeDocument(document, uniqueObjectTracker, subDocumentStructureOccurrences, arrayStructureOccurrences, null);
-        }
-
-        // Determine cardinality based on occurrences
-        uniqueObjectTracker.forEach((key, valueSet) -> {
-            if (valueSet.size() == 1) {
-                System.out.println("Field '" + key + "' with identifiable keys has a 1-1 relationship.");
-            } else {
-                System.out.println("Field '" + key + "' with identifiable keys has a 1-N relationship.");
-            }
-        });
-
-        subDocumentStructureOccurrences.forEach((field, structureMap) -> {
-            if (structureMap.size() == 1) {
-                if (structureMap.values().iterator().next() == 1) {
-                    System.out.println("Sub-document field '" + field + "' has a 1-1 relationship.");
-                } else {
-                    System.out.println("Sub-document field '" + field + "' has a 1-N relationship.");
-                }
-            } else {
-                System.out.println("Sub-document field '" + field + "' has an M-N relationship.");
-            }
-        });
-
-        arrayStructureOccurrences.forEach((field, structureMap) -> {
-            if (structureMap.values().stream().anyMatch(count -> count > 1)) {
-                System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents.");
-                System.out.println(structureMap.toString());
-            } else {
-                System.out.println("Array field '" + field + "' does not appear to have an M-N relationship across documents.");
-            }
-        });
-    }*/
-
     public void analyzeCollectionCardinality(String collectionName) {
         MongoDatabase database = mongoTemplate.getDb();
         MongoCollection<Document> collection = database.getCollection(collectionName);
