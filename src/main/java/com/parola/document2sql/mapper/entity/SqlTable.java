@@ -28,13 +28,13 @@ public class SqlTable {
     @OneToMany(cascade=CascadeType.ALL)
     private List<SqlColumn> columns;
 
-    @ManyToMany(cascade=CascadeType.ALL)
-    private List<SqlRelation> relations;
 
     public SqlTable(String name) {
         this.name = name;
         this.columns = new ArrayList<>();
+/*
         this.relations = new ArrayList<>();
+*/
     }
 
     public SqlTable(){
@@ -47,17 +47,21 @@ public class SqlTable {
         columns.add(column);
     }
 
+/*
     public void setRelation(SqlRelation relation) {
         relations.add(relation);
     }
+*/
 
     public List<SqlColumn> getColumns() {
         return columns;
     }
 
+/*
     public List<SqlRelation> getRelations() {
         return relations;
     }
+*/
 
     public long getId() {
         return id;

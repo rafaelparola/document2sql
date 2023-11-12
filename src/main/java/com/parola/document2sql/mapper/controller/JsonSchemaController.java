@@ -43,7 +43,7 @@ public class JsonSchemaController {
         try {
             jsonSchemaService.mapToSql(schemaId);
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("There is no schema for the given id: " + schemaId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("There is no schema for the given id: " + schemaId + e);
         }
           catch (Exception e) {
             throw new RuntimeException(e);
@@ -58,7 +58,7 @@ public class JsonSchemaController {
         try {
             //dynamicMongoService.analyzeCollectionCardinality("listingsAndReviews");
             //dynamicMongoService.analyzeCollectionCardinality("restaurants");
-            dynamicMongoService.analyzeCollectionCardinality("sales");
+            dynamicMongoService.analyzeCollectionCardinality("companies");
         }
         catch (Exception e) {
             throw new RuntimeException(e);

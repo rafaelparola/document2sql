@@ -11,6 +11,9 @@ public class SqlRelation {
     private long id;
 
     @ManyToOne(cascade=CascadeType.PERSIST)
+    private SqlTable originTable;
+
+    @ManyToOne(cascade=CascadeType.PERSIST)
     private SqlTable referencedTable;
     private String type; // e.g., "object" or "array"
 
@@ -45,5 +48,13 @@ public class SqlRelation {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public SqlTable getOriginTable() {
+        return originTable;
+    }
+
+    public void setOriginTable(SqlTable originTable) {
+        this.originTable = originTable;
     }
 }

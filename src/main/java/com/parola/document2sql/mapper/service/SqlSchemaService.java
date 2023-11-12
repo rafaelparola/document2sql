@@ -33,68 +33,6 @@ public class SqlSchemaService {
     }
 
     /*public String getSqlSchemaDdl() {
-        *//*String ddl = "Meu create table";
-
-        List<SqlTable> tables = sqlTableRepository.findAll();
-
-        for (SqlTable table : tables) {
-            // Faça algo com o objeto "table" aqui
-            // Por exemplo, você pode acessar os atributos da tabela:
-            String tableName = table.getTableName();
-            int tableId = table.getTableId();
-
-            // Realize as operações necessárias com os dados da tabela
-        }*//*
-
-        List<SqlTable> tables = sqlTableRepository.findAll();
-
-        StringBuilder ddl = new StringBuilder();
-
-        for (SqlTable table : tables) {
-            // Crie a declaração da tabela
-            ddl.append("CREATE TABLE ").append(table.getName()).append(" (");
-
-            // Adicione as declarações das colunas
-            List<SqlColumn> columns = table.getColumns();
-            for (SqlColumn column : columns) {
-                ddl.append(column.getName()).append(" ");
-                ddl.append(column.getDataType());
-
-                if (column.isIsPk()) {
-                    ddl.append(" PRIMARY KEY DEFAULT gen_random_uuid()");
-                }
-
-                if (!column.isIsNullable()) {
-                    ddl.append(" NOT NULL");
-                }
-
-                // Adicione outras opções de coluna, se necessário
-
-                ddl.append(", ");
-            }
-
-            // Adicione as declarações de relação
-            List<SqlRelation> relations = table.getRelations();
-            for (SqlRelation relation : relations) {
-                ddl.append("FOREIGN KEY (").append(relation.getReferencedTable().getName()).append("_id) ");
-                ddl.append("REFERENCES ").append(relation.getReferencedTable().getName()).append(", ");
-
-                // Adicione outras opções de relação, se necessário
-            }
-
-            // Remova a vírgula extra no final das declarações
-            if (ddl.charAt(ddl.length() - 2) == ',') {
-                ddl.deleteCharAt(ddl.length() - 2);
-            }
-
-            ddl.append(");\n");
-        }
-
-
-        return ddl.toString();
-    }*/
-
-    public String getSqlSchemaDdl() {
         List<SqlTable> tables = sqlTableRepository.findAll();
 
         // Construa um grafo de dependências entre as tabelas
@@ -173,7 +111,130 @@ public class SqlSchemaService {
         }
 
         stack.push(table);
+    }*/
+
+    public String getSqlSchemaDdl() {
+        List<SqlTable> tables = sqlTableRepository.findAll();
+        Map<Long, List<SqlRelation>> tableRelations = mapTableRelations();
+
+        StringBuilder ddl = new StringBuilder();
+
+        for (SqlTable table : tables) {
+            ddl.append(createTableDdl(table, tableRelations.get(table.getId()))).append("\n");
+        }
+
+        return ddl.toString();
     }
+
+    private Map<Long, List<SqlRelation>> mapTableRelations() {
+        Map<Long, List<SqlRelation>> relationsMap = new HashMap<>();
+        List<SqlRelation> relations = sqlRelationRepository.findAll();
+
+        for (SqlRelation relation : relations) {
+            relationsMap.computeIfAbsent(relation.getOriginTable().getId(), k -> new ArrayList<>()).add(relation);
+        }
+
+        return relationsMap;
+    }
+
+    private String createTableDdl(SqlTable table, List<SqlRelation> relations) {
+        StringBuilder ddl = new StringBuilder();
+        ddl.append("CREATE TABLE ").append(table.getName()).append(" (");
+
+        for (SqlColumn column : table.getColumns()) {
+            ddl.append(column.getName()).append(" ")
+                    .append(column.getDataType());
+
+            if (column.isIsPk()) {
+                ddl.append(" PRIMARY KEY DEFAULT gen_random_uuid()");
+            }
+
+            if (!column.isIsNullable()) {
+                ddl.append(" NOT NULL");
+            }
+
+            ddl.append(", ");
+        }
+
+        // Append foreign key constraints
+        if (relations != null) {
+            for (SqlRelation relation : relations) {
+                SqlTable referencedTable = relation.getReferencedTable();
+                ddl.append("FOREIGN KEY (").append(referencedTable.getName()).append("_id) ")
+                        .append("REFERENCES ").append(referencedTable.getName()).append(", ");
+            }
+        }
+
+        // Remove the trailing comma and space
+        int lastIndex = ddl.lastIndexOf(", ");
+        if (lastIndex >= 0) {
+            ddl.delete(lastIndex, ddl.length());
+        }
+
+        ddl.append(");");
+        return ddl.toString();
+    }
+
+    /*public String getSqlSchemaDdl() {
+        List<SqlTable> tables = sqlTableRepository.findAll();
+        Map<Long, List<SqlRelation>> tableRelations = mapTableRelations();
+
+        StringBuilder ddl = new StringBuilder();
+
+        for (SqlTable table : tables) {
+            ddl.append(createTableDdl(table, tableRelations.get(table.getId()))).append("\n");
+        }
+
+        return ddl.toString();
+    }
+
+    private Map<Long, List<SqlRelation>> mapTableRelations() {
+        Map<Long, List<SqlRelation>> relationsMap = new HashMap<>();
+        List<SqlRelation> relations = sqlRelationRepository.findAll();
+
+        for (SqlRelation relation : relations) {
+            relationsMap.computeIfAbsent(relation.getReferencedTable().getId(), k -> new ArrayList<>()).add(relation);
+        }
+
+        return relationsMap;
+    }
+
+    private String createTableDdl(SqlTable table, List<SqlRelation> relations) {
+        StringBuilder ddl = new StringBuilder();
+        ddl.append("CREATE TABLE ").append(table.getName()).append(" (");
+
+        for (SqlColumn column : table.getColumns()) {
+            ddl.append(column.getName()).append(" ")
+                    .append(column.getDataType());
+
+            if (column.isIsPk()) {
+                ddl.append(" PRIMARY KEY DEFAULT gen_random_uuid()");
+            }
+
+            if (!column.isIsNullable()) {
+                ddl.append(" NOT NULL");
+            }
+
+            ddl.append(", ");
+        }
+
+        // Append foreign key constraints
+        if (relations != null) {
+            for (SqlRelation relation : relations) {
+                ddl.append("FOREIGN KEY (").append(table.getName()).append("_id) ")
+                        .append("REFERENCES ").append(relation.getOriginTable().getName()).append(", ");
+            }
+        }
+
+        // Remove the trailing comma and space
+        int lastIndex = ddl.lastIndexOf(", ");
+        if (lastIndex >= 0) {
+            ddl.delete(lastIndex, ddl.length());
+        }
+
+        ddl.append(");");
+        return ddl.toString();
+    }*/
 
 
 }

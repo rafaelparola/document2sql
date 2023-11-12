@@ -2,6 +2,7 @@ package com.parola.document2sql.mapper.service;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
+import com.parola.document2sql.mapper.entity.SqlColumn;
 import com.parola.document2sql.mapper.entity.SqlRelation;
 import com.parola.document2sql.mapper.entity.SqlTable;
 import com.parola.document2sql.mapper.repository.SqlColumnRepository;
@@ -51,66 +52,173 @@ public class DynamicMongoService {
         }
 
         subDocumentStructureOccurrences.forEach((field, structureMap) -> {
-            //if (structureMap.size() == 1) {
             if (structureMap.values().stream().anyMatch(count -> count > 1)) {
+                String parentTableName = "";
+                String childTableName = "";
+
                 System.out.println("Sub-document field '" + field + "' has a 1-N relationship.");
 
+                if(field.contains(".")) {
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                } else {
+                    parentTableName = collectionName;
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                }
+
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelation = new SqlRelation();
+                sqlRelation.setOriginTable(childTable);
+                sqlRelation.setReferencedTable(parentTable);
+                sqlRelation.setType("1-N");
+
+                SqlColumn foreignKey = new SqlColumn();
+                foreignKey.setName(parentTable.getName()+"_id");
+                foreignKey.setIsFk(true);
+                foreignKey.setDataType("UUID");
+                foreignKey.setSqlTable(childTable);
+                childTable.setColumn(foreignKey);
+
+                sqlRelationRepository.save(sqlRelation);
+                sqlTableRepository.save(childTable);
+
             } else {
+                String parentTableName = "";
+                String childTableName = "";
                 System.out.println("Sub-document field '" + field + "' has a 1-1 relationship.");
+
+                if(field.contains(".")) {
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                } else {
+                    parentTableName = collectionName;
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    System.out.println(parentTableName);
+                    System.out.println(childTableName);
+                }
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelation = new SqlRelation();
+                sqlRelation.setOriginTable(childTable);
+                sqlRelation.setReferencedTable(parentTable);
+                sqlRelation.setType("1-1");
+
+                SqlColumn foreignKey = new SqlColumn();
+                foreignKey.setName(parentTable.getName()+"_id");
+                foreignKey.setIsFk(true);
+                foreignKey.setDataType("UUID");
+                foreignKey.setSqlTable(childTable);
+                childTable.setColumn(foreignKey);
+
+                sqlRelationRepository.save(sqlRelation);
+                sqlTableRepository.save(childTable);
 
             }
         });
 
         arrayStructureOccurrences.forEach((field, structureMap) -> {
+            String parentTableName = "";
+            String childTableName = "";
             if (structureMap.values().stream().anyMatch(count -> count > 1)) {
                 /*for(int i = 0; i < structureMap.size(); i++) {
                     System.out.println(structureMap.);
                 }*/
                 System.out.println(structureMap.values());
                 System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
+                if(field.contains(".")) {
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                } else {
+                    parentTableName = collectionName;
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                }
+                SqlTable sqlTable = new SqlTable(parentTableName+"__R__"+childTableName);
+
+                // Creates the table primary key
+                SqlColumn primaryKey = new SqlColumn();
+                primaryKey.setName(sqlTable.getName()+"_gen_uuid");
+                primaryKey.setIsPk(true);
+                primaryKey.setDataType("UUID");
+                primaryKey.setSqlTable(sqlTable);
+                sqlTable.setColumn(primaryKey);
+
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelationParent = new SqlRelation();
+                sqlRelationParent.setOriginTable(sqlTable);
+                sqlRelationParent.setReferencedTable(parentTable);
+                sqlRelationParent.setType("M-N");
+
+                SqlRelation sqlRelationChild = new SqlRelation();
+                sqlRelationChild.setOriginTable(sqlTable);
+                sqlRelationChild.setReferencedTable(childTable);
+                sqlRelationChild.setType("M-N");
+
+                SqlColumn foreignKeyOriginTable = new SqlColumn();
+                foreignKeyOriginTable.setName(parentTable.getName()+"_id");
+                foreignKeyOriginTable.setIsFk(true);
+                foreignKeyOriginTable.setDataType("UUID");
+                foreignKeyOriginTable.setSqlTable(sqlTable);
+                sqlTable.setColumn(foreignKeyOriginTable);
+
+                SqlColumn foreignKeyReferencedTable = new SqlColumn();
+                foreignKeyReferencedTable.setName(childTable.getName()+"_id");
+                foreignKeyReferencedTable.setIsFk(true);
+                foreignKeyReferencedTable.setDataType("UUID");
+                foreignKeyReferencedTable.setSqlTable(sqlTable);
+                sqlTable.setColumn(foreignKeyReferencedTable);
+
+                sqlRelationRepository.save(sqlRelationParent);
+                sqlRelationRepository.save(sqlRelationChild);
+
 
             } else {
                 System.out.println("Array field '" + field + "' does not appear to have an M-N relationship across documents. Ou seja 1-N");
+                if(field.contains(".")) {
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                } else {
+                    parentTableName = collectionName;
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                    //System.out.println(parentTableName);
+                    //System.out.println(childTableName);
+                }
+
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelation = new SqlRelation();
+                sqlRelation.setOriginTable(childTable);
+                sqlRelation.setReferencedTable(parentTable);
+                sqlRelation.setType("1-N");
+
+                SqlColumn foreignKey = new SqlColumn();
+                foreignKey.setName(parentTable.getName()+"_id");
+                foreignKey.setIsFk(true);
+                foreignKey.setDataType("UUID");
+                foreignKey.setSqlTable(parentTable);
+                parentTable.setColumn(foreignKey);
+
+                sqlRelationRepository.save(sqlRelation);
+                sqlTableRepository.save(childTable);
             }
         });
     }
 
-    /*private void analyzeDocument(Document doc,
-                                 Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
-                                 Map<String, Map<String, Integer>> arrayStructureOccurrences,
-                                 String parentKey) {
-        doc.forEach((key, value) -> {
-            // Construct a composite key to represent the field's full path
-            String fullKey = (parentKey == null) ? key : parentKey + "." + key;
-
-            if (value instanceof Document) {
-
-                String structureHash = value.toString(); // Using the string representation as a hash
-                subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                        .merge(structureHash, 1, Integer::sum);
-
-                // Recursively analyze the nested document
-                analyzeDocument((Document) value, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-
-            } else if (value instanceof List) {
-                // Recursively analyze each item in the array if it's a document
-                ((List<?>) value).stream().distinct().forEach(item -> {
-                    // Use the item itself as the hash for occurrence tracking
-                    Map<String, Integer> occurrencesMap = arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>());
-                    // Increment the count for this unique item
-                    occurrencesMap.merge(item.toString(), 1, Integer::sum);
-                    //System.out.println(item.toString());
-                    if (item instanceof Document) {
-                        analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-                    } else if (item instanceof List) {
-
-                    } else {
-
-                    }
-                });
-            }
-        });
-    }*/
     private void analyzeDocument(Document doc,
                                  Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
                                  Map<String, Map<String, Integer>> arrayStructureOccurrences,
@@ -140,6 +248,7 @@ public class DynamicMongoService {
                                 .merge(structureHash, 1, Integer::sum);
                     }
 
+
                     if (item instanceof Document) {
                         String structureHashObject = generateTopLevelHash((Document) item);
 
@@ -154,26 +263,24 @@ public class DynamicMongoService {
 
 
                         analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-                    }
+                    } /*else if (item instanceof List) {
+                        // Handle a list within a list (nested array)
+                        ((List<?>) item).forEach(nestedItem -> {
+                            if (nestedItem instanceof Document) {
+                                // If the nested item is a Document, analyze it
+                                analyzeDocument((Document) nestedItem, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey + ".[]");
+                            } *//*else {
+                                // If the nested item is a List or other type, generate a hash and count it
+                                String nestedItemHash = nestedItem.toString();
+                                arrayStructureOccurrences.computeIfAbsent(fullKey + ".[]", k -> new HashMap<>())
+                                        .merge(nestedItemHash, 1, Integer::sum);
+                            }*//*
+                        });
+                    }*/
                 });
             }
         });
     }
-
-    /*private String generateTopLevelHash(Document document) {
-        // This will create a simple concatenated string of the top-level fields and their values
-        return document.entrySet().stream()
-                .filter(entry -> !(entry.getValue() instanceof Document) && !(entry.getValue() instanceof List))
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining(","));
-
-        String ret = document.entrySet().stream()
-                .filter(entry -> !(entry.getValue() instanceof Document) && !(entry.getValue() instanceof List))
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining(","));
-        System.out.println(ret);
-        return ret;
-    }*/
 
     private String generateTopLevelHash(Document document) {
         // This will create a concatenated string of the top-level fields and their values,
@@ -214,93 +321,3 @@ public class DynamicMongoService {
         return ret;
     }
 }
-
-    // It words
-    /*public void analyzeCollectionCardinality(String collectionName) {
-        MongoDatabase database = mongoTemplate.getDb();
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-
-        // For structures with identifiable unique keys
-        Map<String, Set<Object>> uniqueObjectTracker = new HashMap<>();
-        // For structures without identifiable unique keys, using string representation as a "structure hash"
-        Map<String, Map<String, Integer>> subDocumentStructureOccurrences = new HashMap<>();
-        // For arrays, tracking their "structure hash"
-        Map<String, Map<String, Integer>> arrayStructureOccurrences = new HashMap<>();
-
-        FindIterable<Document> documents = collection.find();
-        for (Document document : documents) {
-            analyzeDocument(document, uniqueObjectTracker, subDocumentStructureOccurrences, arrayStructureOccurrences, null);
-        }
-
-        // Determine cardinality based on occurrences
-        uniqueObjectTracker.forEach((key, valueSet) -> {
-            if (valueSet.size() == 1) {
-                System.out.println("Field '" + key + "' with identifiable keys has a 1-1 relationship.");
-            } else {
-                System.out.println("Field '" + key + "' with identifiable keys has a 1-N relationship.");
-            }
-        });
-
-        subDocumentStructureOccurrences.forEach((field, structureMap) -> {
-            //if (structureMap.size() == 1) {
-            if (structureMap.values().stream().anyMatch(count -> count > 1)) {
-                System.out.println("Sub-document field '" + field + "' has a 1-N relationship.");
-
-            } else {
-                System.out.println("Sub-document field '" + field + "' has a 1-1 relationship.");
-
-            }
-        });
-
-        arrayStructureOccurrences.forEach((field, structureMap) -> {
-            if (structureMap.values().stream().anyMatch(count -> count > 1)) {
-                System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
-
-            } else {
-                System.out.println("Array field '" + field + "' does not appear to have an M-N relationship across documents. Ou seja 1-N");
-            }
-        });
-    }
-
-    private void analyzeDocument(Document doc,
-                                 Map<String, Set<Object>> uniqueObjectTracker,
-                                 Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
-                                 Map<String, Map<String, Integer>> arrayStructureOccurrences,
-                                 String parentKey) {
-        doc.forEach((key, value) -> {
-            // Construct a composite key to represent the field's full path
-            String fullKey = (parentKey == null) ? key : parentKey + "." + key;
-
-            if (value instanceof Document) {
-                // Check for identifiable unique keys, e.g., "_id"
-                Object id = ((Document) value).get("_id");
-                if (id != null) {
-                    uniqueObjectTracker.computeIfAbsent(fullKey, k -> new HashSet<>()).add(id);
-                } else {
-                    String structureHash = value.toString(); // Using the string representation as a hash
-                    subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                            .merge(structureHash, 1, Integer::sum);
-
-                    // Recursively analyze the nested document
-                    analyzeDocument((Document) value, uniqueObjectTracker, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-                }
-            } else if (value instanceof List) {
-                //String listHash = value.toString(); // Using the string representation as a hash for the entire list
-                //arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                //        .merge(listHash, 1, Integer::sum);
-
-                // Recursively analyze each item in the array if it's a document
-                ((List<?>) value).stream().distinct().forEach(item -> {
-                    // Use the item itself as the hash for occurrence tracking
-                    Map<String, Integer> occurrencesMap = arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>());
-                    // Increment the count for this unique item
-                    occurrencesMap.merge(item.toString(), 1, Integer::sum);
-                    //System.out.println(item.toString());
-                    if (item instanceof Document) {
-                        analyzeDocument((Document) item, uniqueObjectTracker, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-                    }
-                });
-            }
-        });
-    }
-}*/

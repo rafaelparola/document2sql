@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface SqlTableRepository extends ListCrudRepository<SqlTable,Long> {
     List<SqlTable> findByLevel(int level);
+
+    SqlTable findByName(String name);
 }
