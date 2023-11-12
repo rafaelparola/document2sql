@@ -84,22 +84,6 @@ public class JsonSchemaService {
         return null;
     }
 
-    public static void printAttributes(JsonNode node) {
-        if (node.isObject()) {
-            node.fields().forEachRemaining(entry -> {
-                System.out.println("Attribute: " + entry.getKey());
-                printAttributes(entry.getValue());
-            });
-        } else if (node.isArray()) {
-            for (JsonNode element : node) {
-                printAttributes(element);
-            }
-        } else {
-            // Handle leaf nodes (values)
-            System.out.println("Value: " + node);
-        }
-    }
-
     public void mapToSql(long jsonSchemaId) throws JsonProcessingException {
         JsonSchema jsonSchema = this.getJsonSchemaById(jsonSchemaId);
         JsonNode node = this.getSchemaJsonNodeInJsonSchema(jsonSchema);
@@ -109,27 +93,19 @@ public class JsonSchemaService {
         System.out.println(node.isObject());
         System.out.println(node.getNodeType());
 
-        //System.out.println(node.get("restaurants"));
-        //JsonNode restaurants = node.get("restaurants");
-        //JsonNode neighborhoods = node.get("neighborhoods");
 
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String tableName = it.next().replace(" ", "_");
             SqlTable sqlTable = new SqlTable(tableName);
             sqlTable.setCreatedDateAndTime(new Date());
+            sqlTable.setLevel(1); // Set as first json lvl
             JsonNode tableNode = node.get(tableName);
             this.createSqlObjects(tableNode, sqlTable);
         }
 
-        /*SqlTable sqlTable = new SqlTable("restaurants");
-        //SqlTable sqlTable = new SqlTable("neighborhoods");
-        this.createSqlObjects(restaurants, sqlTable);*/
 
     }
 
-    public void createSqlObjects(JsonNode schema) {
-                createSqlObjects(schema, null);
-            }
 
     public void createSqlObjectsArray(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
@@ -239,7 +215,7 @@ public class JsonSchemaService {
                     // Creates child table
                     SqlTable childTable = new SqlTable(parentTable.getName() +"__"+ fieldName.replace(" ", "_"));
                     childTable.setCreatedDateAndTime(new Date());
-
+                    childTable.setLevel(parentTable.getLevel() + 1);
                     // Creates the relation between child table and parent table (Change later)
                     SqlRelation relation = new SqlRelation();
                     // If it is one object containing one object is 1-1????
@@ -270,7 +246,7 @@ public class JsonSchemaService {
                     foreignKey.setDataType("UUID");
                     foreignKey.setSqlTable(childArrayTable);
                     childArrayTable.setColumn(foreignKey);
-
+                    childArrayTable.setLevel(parentTable.getLevel() + 1);
                     // Creates the relation between child table and parent table (Change later)
                     SqlRelation relation = new SqlRelation();
                     // If it is one object containing one object is 1-1????
@@ -310,6 +286,10 @@ public class JsonSchemaService {
 
 
         return node.fieldNames().next();
+    }
+
+    public void createRelations() {
+
     }
 
     public JsonNode getStructure(JsonNode node, String objectType) {

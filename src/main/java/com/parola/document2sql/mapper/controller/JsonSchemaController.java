@@ -2,6 +2,7 @@ package com.parola.document2sql.mapper.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.parola.document2sql.mapper.repository.SqlSchemaRepository;
+import com.parola.document2sql.mapper.service.DynamicMongoService;
 import com.parola.document2sql.mapper.service.JsonSchemaService;
 import com.parola.document2sql.mapper.service.SqlSchemaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class JsonSchemaController {
 
     @Autowired
     JsonSchemaService jsonSchemaService;
+
+    @Autowired
+    DynamicMongoService dynamicMongoService;
 
     @PostMapping("/load")
     public ResponseEntity<String> loadJsonSchema(@RequestBody JsonNode payload){
@@ -46,5 +50,20 @@ public class JsonSchemaController {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body("The mapping was succesfull");
+    }
+
+    @GetMapping("/create-relation")
+    public ResponseEntity<String> mapToSql(){
+
+        try {
+            //dynamicMongoService.analyzeCollectionCardinality("listingsAndReviews");
+            //dynamicMongoService.analyzeCollectionCardinality("restaurants");
+            dynamicMongoService.analyzeCollectionCardinality("sales");
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body("The mongodb connection was succesfull");
     }
 }

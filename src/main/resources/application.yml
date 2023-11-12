@@ -14,3 +14,6 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   h2:
     console.enabled: true
+  data:
+    mongodb:
+      uri: mongodb+srv://rafaelparola:Parola923@cluster0.aopulmp.mongodb.net/sample_supplies?retryWrites=true&w=majority

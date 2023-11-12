@@ -17,12 +17,15 @@ public class SqlTable {
     @Column
     private String name;
 
+    @Column
+    private int level;
+
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_date_time")
     private Date createdDateAndTime;
 
-    @OneToMany(cascade=CascadeType.ALL, mappedBy = "sqlTable")
+    @OneToMany(cascade=CascadeType.ALL)
     private List<SqlColumn> columns;
 
     @ManyToMany(cascade=CascadeType.ALL)
@@ -78,5 +81,13 @@ public class SqlTable {
 
     public void setCreatedDateAndTime(Date createdDateAndTime) {
         this.createdDateAndTime = createdDateAndTime;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }
