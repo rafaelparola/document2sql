@@ -15,6 +15,7 @@ import org.bson.Document;
 
 import javax.print.Doc;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class DynamicMongoService {
@@ -62,6 +63,10 @@ public class DynamicMongoService {
 
         arrayStructureOccurrences.forEach((field, structureMap) -> {
             if (structureMap.values().stream().anyMatch(count -> count > 1)) {
+                /*for(int i = 0; i < structureMap.size(); i++) {
+                    System.out.println(structureMap.);
+                }*/
+                System.out.println(structureMap.values());
                 System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
 
             } else {
@@ -70,7 +75,7 @@ public class DynamicMongoService {
         });
     }
 
-    private void analyzeDocument(Document doc,
+    /*private void analyzeDocument(Document doc,
                                  Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
                                  Map<String, Map<String, Integer>> arrayStructureOccurrences,
                                  String parentKey) {
@@ -79,8 +84,6 @@ public class DynamicMongoService {
             String fullKey = (parentKey == null) ? key : parentKey + "." + key;
 
             if (value instanceof Document) {
-                // Check for identifiable unique keys, e.g., "_id"
-                Object id = ((Document) value).get("_id");
 
                 String structureHash = value.toString(); // Using the string representation as a hash
                 subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
@@ -99,10 +102,116 @@ public class DynamicMongoService {
                     //System.out.println(item.toString());
                     if (item instanceof Document) {
                         analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
+                    } else if (item instanceof List) {
+
+                    } else {
+
                     }
                 });
             }
         });
+    }*/
+    private void analyzeDocument(Document doc,
+                                 Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
+                                 Map<String, Map<String, Integer>> arrayStructureOccurrences,
+                                 String parentKey) {
+        doc.forEach((key, value) -> {
+            // Construct a composite key to represent the field's full path
+            String fullKey = (parentKey == null) ? key : parentKey + "." + key;
+
+            if (value instanceof Document) {
+                // Generate a hash for the top-level document fields only
+                String structureHash = generateTopLevelHash((Document) value);
+                if (structureHash != null) {
+                    subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                            .merge(structureHash, 1, Integer::sum);
+                }
+
+
+                analyzeDocument((Document) value, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
+            } else if (value instanceof List) {
+                // Handle the list of items, considering only top-level items
+                ((List<?>) value).stream().distinct().forEach(item -> {
+                    // Generate a simple hash based on the item's toString, for immediate items only
+                    String structureHash = generateArrayHash((List<?>) value);
+
+                    if (structureHash != null) {
+                        /*Map<String, Integer> occurrencesMap = */arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                                .merge(structureHash, 1, Integer::sum);
+                    }
+
+                    if (item instanceof Document) {
+                        String structureHashObject = generateTopLevelHash((Document) item);
+
+
+                        if(structureHashObject != null) {
+                            arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                                    .merge(structureHashObject, 1, Integer::sum);
+                            /*subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                                    .merge(structureHashObject, 1, Integer::sum);*/
+
+                        }
+
+
+                        analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
+                    }
+                });
+            }
+        });
+    }
+
+    /*private String generateTopLevelHash(Document document) {
+        // This will create a simple concatenated string of the top-level fields and their values
+        return document.entrySet().stream()
+                .filter(entry -> !(entry.getValue() instanceof Document) && !(entry.getValue() instanceof List))
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(","));
+
+        String ret = document.entrySet().stream()
+                .filter(entry -> !(entry.getValue() instanceof Document) && !(entry.getValue() instanceof List))
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(","));
+        System.out.println(ret);
+        return ret;
+    }*/
+
+    private String generateTopLevelHash(Document document) {
+        // This will create a concatenated string of the top-level fields and their values,
+        // excluding values that are Documents, Lists (arrays), or null
+        String ret = document.entrySet().stream()
+                .filter(entry -> !(entry.getValue() instanceof Document)
+                        && !(entry.getValue() instanceof List)
+                        && entry.getValue() != null)
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(","));
+        if(ret.trim().isEmpty()) {
+            ret = null;
+        }
+        if(ret != null) {
+            System.out.println(ret);
+        }
+        //System.out.println(ret);
+        //System.out.println(ret.trim().length());
+        return ret;
+    }
+
+    private String generateArrayHash(List<?> array) {
+        // This will create a concatenated string of all non-null, non-Document elements in the array
+        String ret = array.stream()
+                .filter(item -> !(item instanceof Document)
+                        && !(item instanceof List)
+                        && item != null)
+                .map(Object::toString)
+                .collect(Collectors.joining(","));
+        if(ret.trim().isEmpty()) {
+            ret = null;
+        }
+        if(ret != null) {
+            System.out.println(ret);
+        }
+        //System.out.println(ret.trim().length());
+
+        return ret;
     }
 }
 
