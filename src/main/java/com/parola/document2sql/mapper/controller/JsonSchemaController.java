@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -35,6 +36,13 @@ public class JsonSchemaController {
         jsonSchemaService.saveJsonSchema(payload);
 
         return ResponseEntity.status(HttpStatus.OK).body("The schema was successfully loaded");
+    }
+
+
+
+    @GetMapping("/all")
+    public ResponseEntity<List<JsonSchema>> getAllJsonSchemas() {
+        return ResponseEntity.status(HttpStatus.OK).body(jsonSchemaService.getAllJsonSchemas());
     }
 
     @GetMapping("/map-to-sql/{schemaId}")

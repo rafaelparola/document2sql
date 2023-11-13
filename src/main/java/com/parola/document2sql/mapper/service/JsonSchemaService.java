@@ -57,6 +57,10 @@ public class JsonSchemaService {
         jsonSchemaRepository.save(jsonSchema);
     }
 
+    public List<JsonSchema> getAllJsonSchemas() {
+        return jsonSchemaRepository.findAll();
+    }
+
     public JsonSchema getJsonSchemaById(long jsonSchemaId) {
         // Get the JsonSchema by ID
         Optional<JsonSchema> jsonSchemaOptional = jsonSchemaRepository.findById(jsonSchemaId);

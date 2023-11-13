@@ -94,11 +94,11 @@ public class DynamicMongoService {
                 System.out.println("Sub-document field '" + field + "' has a 1-1 relationship.");
 
                 if(field.contains(".")) {
-                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
-                    childTableName = collectionName+"__"+field.replace(".","__");
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__").replace(" ", "_");
+                    childTableName = collectionName+"__"+field.replace(".","__").replace(" ", "_");
                 } else {
-                    parentTableName = collectionName;
-                    childTableName = collectionName+"__"+field.replace(".","__");
+                    parentTableName = collectionName.replace(" ", "_");
+                    childTableName = collectionName+"__"+field.replace(".","__").replace(" ", "_");
                     System.out.println(parentTableName);
                     System.out.println(childTableName);
                 }
