@@ -80,9 +80,6 @@ public class JsonSchemaService {
             JsonNode jsonNode = objectMapper.readTree(jsonString.substring( 1, jsonString.length() - 1 ).replace("\\", "") );
             //JsonNode jsonNode = objectMapper.readTree(jsonString);
 
-            // Print the JSON data to the system out
-            System.out.println(jsonNode);
-            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode));
             return jsonNode;
         } catch (IOException e) {
             // Handle any exceptions that may occur during JSON parsing
@@ -95,28 +92,16 @@ public class JsonSchemaService {
         JsonSchema jsonSchema = this.getJsonSchemaById(jsonSchemaId);
         JsonNode node = this.getSchemaJsonNodeInJsonSchema(jsonSchema);
 
-        System.out.println(node);
-        System.out.println(node.isArray());
-        System.out.println(node.isObject());
-        System.out.println(node.getNodeType());
-
-
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String tableName = it.next().replace(" ", "_");
             SqlTable sqlTable = new SqlTable(tableName);
             sqlTable.setCreatedDateAndTime(new Date());
-            sqlTable.setLevel(1); // Set as first json lvl
             JsonNode tableNode = node.get(tableName);
-            System.out.println(sqlTable.getName());
             this.createSqlObjects(tableNode, sqlTable);
 
             dynamicMongoService.analyzeCollectionCardinality(tableName);
         }
-
-
     }
-
-
     public void createSqlObjectsArray(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
         SqlColumn primaryKey = new SqlColumn();
@@ -183,11 +168,7 @@ public class JsonSchemaService {
 
                     for (Iterator<String> attribute = fieldNameNode.fieldNames(); attribute.hasNext();) {
                         String attributeName = attribute.next().replace(" ", "_");
-                        /*if (attributeName == PRIMARY_KEY){
-                            column.setIsPk(true);
-                        }*/ /*else if (attributeName == FOREIGN_KEY) {
-                            column.setIsFk(true);
-                        }*/ /*else*/ if (attributeName == KEY) {
+                        if (attributeName == KEY) {
                             column.setIsUnique(true);
                             column.setIsNullable(false);
                         }
@@ -207,47 +188,12 @@ public class JsonSchemaService {
                     // Creates child table
                     SqlTable childTable = new SqlTable(parentTable.getName() +"__"+ fieldName.replace(" ", "_"));
                     childTable.setCreatedDateAndTime(new Date());
-                    childTable.setLevel(parentTable.getLevel() + 1);
-                    // Creates the relation between child table and parent table (Change later)
-                       //SqlRelation relation = new SqlRelation();
-                    // If it is one object containing one object is 1-1????
-                    // Perguntar ao professor como é possível realizar uma 1-1 nesse cenário
-                    // N pra um zips vai possuir muitos loc
-                       //relation.setType("1-N");
-                       //relation.setReferencedTable(parentTable);
-                       //childTable.setRelation(relation);
-
-                    // Creates child table reference key
-                    /*SqlColumn foreignKey = new SqlColumn();
-                    foreignKey.setName(parentTable.getName()+"_id");
-                    foreignKey.setIsFk(true);
-                    foreignKey.setDataType("UUID");
-                    foreignKey.setSqlTable(childTable);
-                    childTable.setColumn(foreignKey);*/
 
                     // Get the childNodeStructure
                     JsonNode childNodeStructure = this.getObjectStructure(fieldNameNode);
                     this.createSqlObjects(childNodeStructure, childTable);
                 } else if (type == ARRAY) {
                     SqlTable childArrayTable = new SqlTable(parentTable.getName() +"__"+fieldName.replace(" ", "_"));
-
-                    // Creates child table reference key
-                    /*SqlColumn foreignKey = new SqlColumn();
-                    foreignKey.setName(parentTable.getName()+"_id");
-                    foreignKey.setIsFk(true);
-                    foreignKey.setDataType("UUID");
-                    foreignKey.setSqlTable(childArrayTable);
-                    childArrayTable.setColumn(foreignKey);*/
-                    //childArrayTable.setLevel(parentTable.getLevel() + 1);
-                    // Creates the relation between child table and parent table (Change later)
-                       //SqlRelation relation = new SqlRelation();
-                    // If it is one object containing one object is 1-1????
-                    // Perguntar ao professor como é possível realizar uma 1-1 nesse cenário
-                    // N pra um zips vai possuir muitos loc
-                       //relation.setType("1-N");
-                       //relation.setReferencedTable(parentTable);
-                       //childArrayTable.setRelation(relation);
-
 
                     // Gets Array Structure
                     JsonNode arrayStructure = getArrayStructure(fieldNameNode);
@@ -256,7 +202,6 @@ public class JsonSchemaService {
                     this.createSqlObjectsArray(arrayStructure, childArrayTable);
 
                 }
-                System.out.println(parentTable.getName());
                 sqlTableRepository.save(parentTable);
 
             }
@@ -267,16 +212,6 @@ public class JsonSchemaService {
     public JsonNode getNodeObjectType(JsonNode node) {
         return node.get(TYPES);
     }
-
-    /*public String getStringObjectType(JsonNode node) {
-        for(Iterator<String> it = node.fieldNames(); it.hasNext();) {
-
-            if (it.next() != "Null") {
-                return it.next();
-            }
-        }
-        return node.fieldNames().next();
-    }*/
 
     public String getStringObjectType(JsonNode node) {
         for (Iterator<String> it = node.fieldNames(); it.hasNext();) {
@@ -291,10 +226,6 @@ public class JsonSchemaService {
 
     public void createRelations() {
 
-    }
-
-    public JsonNode getStructure(JsonNode node, String objectType) {
-        return node.get(objectType).get(STRUCTURE);
     }
 
     public JsonNode getObjectStructure(JsonNode node) {

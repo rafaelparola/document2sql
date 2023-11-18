@@ -110,12 +110,20 @@ public class DynamicMongoService {
                 sqlRelation.setReferencedTable(parentTable);
                 sqlRelation.setType("1-1");
 
-                SqlColumn foreignKey = new SqlColumn();
-                foreignKey.setName(parentTable.getName()+"_id");
+                //SqlColumn foreignKey = new SqlColumn();
+                List<SqlColumn> columns = childTable.getColumns();
+                for (SqlColumn column : columns) {
+                    if (column.isIsPk()) {
+                        //childTable.getColumns().get((int) column.getId()).setIsFk(true);
+                        column.setIsFk(true);
+                        sqlColumnRepository.save(column);
+                    }
+                }
+                /*foreignKey.setName(parentTable.getName()+"_id");
                 foreignKey.setIsFk(true);
                 foreignKey.setDataType("UUID");
                 foreignKey.setSqlTable(childTable);
-                childTable.setColumn(foreignKey);
+                childTable.setColumn(foreignKey);*/
 
                 sqlRelationRepository.save(sqlRelation);
                 sqlTableRepository.save(childTable);
@@ -127,9 +135,9 @@ public class DynamicMongoService {
             String parentTableName = "";
             String childTableName = "";
             if (structureMap.values().stream().anyMatch(count -> count > 1)) {
-                /*for(int i = 0; i < structureMap.size(); i++) {
-                    System.out.println(structureMap.);
-                }*/
+                for(int i = 0; i < structureMap.size(); i++) {
+                    System.out.println(structureMap);
+                }
                 System.out.println(structureMap.values());
                 System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
                 if(field.contains(".")) {
@@ -210,8 +218,8 @@ public class DynamicMongoService {
                 foreignKey.setName(parentTable.getName()+"_id");
                 foreignKey.setIsFk(true);
                 foreignKey.setDataType("UUID");
-                foreignKey.setSqlTable(parentTable);
-                parentTable.setColumn(foreignKey);
+                foreignKey.setSqlTable(childTable);
+                childTable.setColumn(foreignKey);
 
                 sqlRelationRepository.save(sqlRelation);
                 sqlTableRepository.save(childTable);
@@ -241,13 +249,22 @@ public class DynamicMongoService {
                 // Handle the list of items, considering only top-level items
                 ((List<?>) value).stream().distinct().forEach(item -> {
                     // Generate a simple hash based on the item's toString, for immediate items only
-                    String structureHash = generateArrayHash((List<?>) value);
 
-                    if (structureHash != null) {
-                        /*Map<String, Integer> occurrencesMap = */arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                                .merge(structureHash, 1, Integer::sum);
+                    if (!(item instanceof Document) && !(item instanceof List)) {
+                        String structureHash = "Not M-N";
+                        arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                                .merge(structureHash, 0, Integer::sum);
+                        return;
                     }
 
+                    if (item instanceof List) {
+                        String structureHash = generateArrayHash((List<?>) value);
+
+                        if (structureHash != null) {
+                            /*Map<String, Integer> occurrencesMap = */arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                                    .merge(structureHash, 1, Integer::sum);
+                        }
+                    }
 
                     if (item instanceof Document) {
                         String structureHashObject = generateTopLevelHash((Document) item);

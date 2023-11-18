@@ -16,4 +16,4 @@ spring:
     console.enabled: true
   data:
     mongodb:
-      uri: mongodb+srv://rafaelparola:Parola923@cluster0.aopulmp.mongodb.net/airlines?retryWrites=true&w=majority
+      uri: mongodb+srv://rafaelparola:Parola923@cluster0.aopulmp.mongodb.net/exemplo?retryWrites=true&w=majority
