@@ -61,13 +61,9 @@ public class DynamicMongoService {
                 if(field.contains(".")) {
                     parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 } else {
                     parentTableName = collectionName;
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 }
 
                 SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
@@ -114,17 +110,10 @@ public class DynamicMongoService {
                 List<SqlColumn> columns = childTable.getColumns();
                 for (SqlColumn column : columns) {
                     if (column.isIsPk()) {
-                        //childTable.getColumns().get((int) column.getId()).setIsFk(true);
                         column.setIsFk(true);
                         sqlColumnRepository.save(column);
                     }
                 }
-                /*foreignKey.setName(parentTable.getName()+"_id");
-                foreignKey.setIsFk(true);
-                foreignKey.setDataType("UUID");
-                foreignKey.setSqlTable(childTable);
-                childTable.setColumn(foreignKey);*/
-
                 sqlRelationRepository.save(sqlRelation);
                 sqlTableRepository.save(childTable);
 
@@ -143,13 +132,9 @@ public class DynamicMongoService {
                 if(field.contains(".")) {
                     parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 } else {
                     parentTableName = collectionName;
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 }
                 SqlTable sqlTable = new SqlTable(parentTableName+"__R__"+childTableName);
 
@@ -197,13 +182,9 @@ public class DynamicMongoService {
                 if(field.contains(".")) {
                     parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 } else {
                     parentTableName = collectionName;
                     childTableName = collectionName+"__"+field.replace(".","__");
-                    //System.out.println(parentTableName);
-                    //System.out.println(childTableName);
                 }
 
                 SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
@@ -249,7 +230,6 @@ public class DynamicMongoService {
                 // Handle the list of items, considering only top-level items
                 ((List<?>) value).stream().distinct().forEach(item -> {
                     // Generate a simple hash based on the item's toString, for immediate items only
-
                     if (!(item instanceof Document) && !(item instanceof List)) {
                         String structureHash = "Not M-N";
                         arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
@@ -261,7 +241,7 @@ public class DynamicMongoService {
                         String structureHash = generateArrayHash((List<?>) value);
 
                         if (structureHash != null) {
-                            /*Map<String, Integer> occurrencesMap = */arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
+                            arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
                                     .merge(structureHash, 1, Integer::sum);
                         }
                     }
@@ -273,27 +253,11 @@ public class DynamicMongoService {
                         if(structureHashObject != null) {
                             arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
                                     .merge(structureHashObject, 1, Integer::sum);
-                            /*subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                                    .merge(structureHashObject, 1, Integer::sum);*/
-
                         }
 
 
                         analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
-                    } /*else if (item instanceof List) {
-                        // Handle a list within a list (nested array)
-                        ((List<?>) item).forEach(nestedItem -> {
-                            if (nestedItem instanceof Document) {
-                                // If the nested item is a Document, analyze it
-                                analyzeDocument((Document) nestedItem, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey + ".[]");
-                            } *//*else {
-                                // If the nested item is a List or other type, generate a hash and count it
-                                String nestedItemHash = nestedItem.toString();
-                                arrayStructureOccurrences.computeIfAbsent(fullKey + ".[]", k -> new HashMap<>())
-                                        .merge(nestedItemHash, 1, Integer::sum);
-                            }*//*
-                        });
-                    }*/
+                    }
                 });
             }
         });
@@ -311,11 +275,6 @@ public class DynamicMongoService {
         if(ret.trim().isEmpty()) {
             ret = null;
         }
-        if(ret != null) {
-            System.out.println(ret);
-        }
-        //System.out.println(ret);
-        //System.out.println(ret.trim().length());
         return ret;
     }
 
@@ -333,7 +292,6 @@ public class DynamicMongoService {
         if(ret != null) {
             System.out.println(ret);
         }
-        //System.out.println(ret.trim().length());
 
         return ret;
     }
