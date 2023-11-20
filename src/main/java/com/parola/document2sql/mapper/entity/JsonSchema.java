@@ -1,19 +1,20 @@
 package com.parola.document2sql.mapper.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Column;
-import jakarta.persistence.GenerationType;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.*;
+import org.hibernate.annotations.Type;
 
-@Entity
+import java.util.Map;
+
+@Entity(name="JSON_SCHEMA")
 public class JsonSchema {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(columnDefinition = "JSON")
+    //@ElementCollection
+    @Column(columnDefinition = "json")
     private String schema;
 
     public JsonSchema() {

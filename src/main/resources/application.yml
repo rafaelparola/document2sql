@@ -9,5 +9,11 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
   h2:
     console.enabled: true
+  data:
+    mongodb:
+      uri: mongodb+srv://<<user>>:<<pass>>@cluster0.aopulmp.mongodb.net/exemplo?retryWrites=true&w=majority
