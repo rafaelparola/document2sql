@@ -387,9 +387,11 @@ public class DynamicMongoService {
                 ((List<?>) value).stream().distinct().forEach(item -> {
                     // Generate a simple hash based on the item's toString, for immediate items only
                     if (!(item instanceof Document) && !(item instanceof List)) {
-                        String structureHash = "Not M-N";
+                        //String structureHash = "Not M-N";
+                        String structureHash = generateArrayHash((List<?>) value);
                         arrayStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
-                                .merge(structureHash, 0, Integer::sum);
+                                //.merge(structureHash, 0, Integer::sum);
+                                .merge(structureHash, 1, Integer::sum);
                         return;
                     }
 
