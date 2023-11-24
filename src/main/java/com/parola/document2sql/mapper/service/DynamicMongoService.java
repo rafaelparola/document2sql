@@ -83,7 +83,9 @@ public class DynamicMongoService {
                     isManyToOne.set(true);
                     break;
                 }
-                else if ((parentDocs == null || parentDocs.size() == 1) && structureMap.values().stream().anyMatch(count -> count > 1)) {
+                else if ((parentDocs == null || parentDocs.size() == 1)
+                        && structureMap.values().stream().allMatch(count -> count == 1)
+                        &&  parentDocumentOccurrencesPerFullKey.get(field).values().stream().anyMatch(count -> count > 1)) {
                     isOneToMany.set(true);
                     break;
                 }
