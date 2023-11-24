@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 
-import javax.print.Doc;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,14 +45,157 @@ public class DynamicMongoService {
         Map<String, Map<String, Integer>> subDocumentStructureOccurrences = new HashMap<>();
         // For arrays, tracking their "structure hash"
         Map<String, Map<String, Integer>> arrayStructureOccurrences = new HashMap<>();
+        // For parents, tracking their "structure hash" and it's childs
+        Map<String, Set<String>> parentDocumentOccurrences = new HashMap<>();
+        // For parent per full key
+        Map<String, Map<String, Integer>> parentDocumentOccurrencesPerFullKey = new HashMap<>();
+
 
         FindIterable<Document> documents = collection.find();
         for (Document document : documents) {
-            analyzeDocument(document, subDocumentStructureOccurrences, arrayStructureOccurrences, null);
+            analyzeDocument(document, subDocumentStructureOccurrences, arrayStructureOccurrences, parentDocumentOccurrences, parentDocumentOccurrencesPerFullKey, null);
         }
 
+
+        AtomicBoolean isManyToMany = new AtomicBoolean(false);
+        AtomicBoolean isManyToOne = new AtomicBoolean(false);
+        AtomicBoolean isOneToMany = new AtomicBoolean(false);
+        AtomicBoolean isOneToOne = new AtomicBoolean(false);
+
         subDocumentStructureOccurrences.forEach((field, structureMap) -> {
-            if (structureMap.values().stream().anyMatch(count -> count > 1)) {
+
+            for (String structureHash : structureMap.keySet()) {
+                Set<String> parentDocs = parentDocumentOccurrences.get(structureHash);
+                System.out.println(structureHash);
+                System.out.println(parentDocs);
+                System.out.println(parentDocumentOccurrencesPerFullKey.get(field));
+                if (parentDocs != null && parentDocs.size() > 1
+                        && structureMap.values().stream().anyMatch(count -> count > 1)
+                        && parentDocumentOccurrencesPerFullKey.get(field).values().stream().anyMatch(count -> count > 1)
+                ) {
+                    isManyToMany.set(true);
+                    break;
+                }
+                else if (parentDocs != null && parentDocs.size() > 1
+                            && structureMap.values().stream().anyMatch(count -> count > 1)
+                            && parentDocumentOccurrencesPerFullKey.get(field).values().stream().allMatch(count -> count == 1)
+                        ) {
+                    isManyToOne.set(true);
+                    break;
+                }
+                else if ((parentDocs == null || parentDocs.size() == 1) && structureMap.values().stream().anyMatch(count -> count > 1)) {
+                    isOneToMany.set(true);
+                    break;
+                }
+                else if ((parentDocs == null || parentDocs.size() == 1) && structureMap.values().stream().noneMatch(count -> count > 1)) {
+                    isOneToOne.set(true);
+                }
+            }
+
+            if (isManyToMany.get()) {
+                System.out.println("Many-to-Many");
+            }
+            if (isManyToOne.get()) {
+                System.out.println("Many-to-One");
+            }
+            if (isOneToMany.get()) {
+                System.out.println("One-to-Many");
+            }
+            if (isOneToOne.get()) {
+                System.out.println("One-to-One");
+            }
+
+
+
+            /*if(isManyToMany.get()) {
+
+            }*/
+            if (isManyToOne.get()) {
+                String parentTableName = "";
+                String childTableName = "";
+
+                System.out.println("Sub-document field '" + field + "' has a N-1 relationship.");
+
+                if(field.contains(".")) {
+                    childTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    parentTableName = collectionName+"__"+field.replace(".","__");
+                } else {
+                    childTableName = collectionName;
+                    parentTableName = collectionName+"__"+field.replace(".","__");
+                }
+
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelation = new SqlRelation();
+                sqlRelation.setOriginTable(childTable);
+                sqlRelation.setReferencedTable(parentTable);
+                sqlRelation.setType("N-1");
+
+                SqlColumn foreignKey = new SqlColumn();
+                foreignKey.setName(parentTable.getName()+"_id");
+                foreignKey.setIsFk(true);
+                foreignKey.setDataType("UUID");
+                foreignKey.setSqlTable(childTable);
+                childTable.setColumn(foreignKey);
+
+                sqlRelationRepository.save(sqlRelation);
+                sqlTableRepository.save(childTable);
+            }
+            else if (isManyToMany.get()) {
+                String parentTableName = "";
+                String childTableName = "";
+
+                System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
+                if(field.contains(".")) {
+                    parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                } else {
+                    parentTableName = collectionName;
+                    childTableName = collectionName+"__"+field.replace(".","__");
+                }
+                SqlTable sqlTable = new SqlTable(parentTableName+"__R__"+childTableName);
+
+                // Creates the table primary key
+                SqlColumn primaryKey = new SqlColumn();
+                primaryKey.setName(sqlTable.getName()+"_gen_uuid");
+                primaryKey.setIsPk(true);
+                primaryKey.setDataType("UUID");
+                primaryKey.setSqlTable(sqlTable);
+                sqlTable.setColumn(primaryKey);
+
+                SqlTable parentTable = sqlTableRepository.findByName(parentTableName);
+                SqlTable childTable  = sqlTableRepository.findByName(childTableName);
+
+                SqlRelation sqlRelationParent = new SqlRelation();
+                sqlRelationParent.setOriginTable(sqlTable);
+                sqlRelationParent.setReferencedTable(parentTable);
+                sqlRelationParent.setType("M-N");
+
+                SqlRelation sqlRelationChild = new SqlRelation();
+                sqlRelationChild.setOriginTable(sqlTable);
+                sqlRelationChild.setReferencedTable(childTable);
+                sqlRelationChild.setType("M-N");
+
+                SqlColumn foreignKeyOriginTable = new SqlColumn();
+                foreignKeyOriginTable.setName(parentTable.getName()+"_id");
+                foreignKeyOriginTable.setIsFk(true);
+                foreignKeyOriginTable.setDataType("UUID");
+                foreignKeyOriginTable.setSqlTable(sqlTable);
+                sqlTable.setColumn(foreignKeyOriginTable);
+
+                SqlColumn foreignKeyReferencedTable = new SqlColumn();
+                foreignKeyReferencedTable.setName(childTable.getName()+"_id");
+                foreignKeyReferencedTable.setIsFk(true);
+                foreignKeyReferencedTable.setDataType("UUID");
+                foreignKeyReferencedTable.setSqlTable(sqlTable);
+                sqlTable.setColumn(foreignKeyReferencedTable);
+
+                sqlRelationRepository.save(sqlRelationParent);
+                sqlRelationRepository.save(sqlRelationChild);
+            }
+
+            else if (isOneToMany.get()) {
                 String parentTableName = "";
                 String childTableName = "";
 
@@ -84,7 +227,7 @@ public class DynamicMongoService {
                 sqlRelationRepository.save(sqlRelation);
                 sqlTableRepository.save(childTable);
 
-            } else {
+            } else if (isOneToOne.get()) {
                 String parentTableName = "";
                 String childTableName = "";
                 System.out.println("Sub-document field '" + field + "' has a 1-1 relationship.");
@@ -124,10 +267,10 @@ public class DynamicMongoService {
             String parentTableName = "";
             String childTableName = "";
             if (structureMap.values().stream().anyMatch(count -> count > 1)) {
-                for(int i = 0; i < structureMap.size(); i++) {
+                /*for(int i = 0; i < structureMap.size(); i++) {
                     System.out.println(structureMap);
-                }
-                System.out.println(structureMap.values());
+                }*/
+                //System.out.println(structureMap.values());
                 System.out.println("Array field '" + field + "' appears to have an M-N relationship across documents. ou seja M-N");
                 if(field.contains(".")) {
                     parentTableName = collectionName+"__" + field.substring(0, field.lastIndexOf(".")).replace(".","__");
@@ -211,10 +354,15 @@ public class DynamicMongoService {
     private void analyzeDocument(Document doc,
                                  Map<String, Map<String, Integer>> subDocumentStructureOccurrences,
                                  Map<String, Map<String, Integer>> arrayStructureOccurrences,
+                                 Map<String, Set<String>> parentDocumentOccurrences,
+                                 Map<String, Map<String, Integer>> parentDocumentOccurrencesPerFullKey,
                                  String parentKey) {
         doc.forEach((key, value) -> {
             // Construct a composite key to represent the field's full path
             String fullKey = (parentKey == null) ? key : parentKey + "." + key;
+
+            // Código novo
+            String documentHash = generateTopLevelHash(doc);
 
             if (value instanceof Document) {
                 // Generate a hash for the top-level document fields only
@@ -222,10 +370,16 @@ public class DynamicMongoService {
                 if (structureHash != null) {
                     subDocumentStructureOccurrences.computeIfAbsent(fullKey, k -> new HashMap<>())
                             .merge(structureHash, 1, Integer::sum);
+
+                    parentDocumentOccurrences.computeIfAbsent(structureHash, k -> new HashSet<>())
+                            .add(documentHash);
+
+                    parentDocumentOccurrencesPerFullKey.computeIfAbsent(fullKey, k -> new HashMap<>())
+                            .merge(documentHash, 1, Integer::sum);
                 }
 
 
-                analyzeDocument((Document) value, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
+                analyzeDocument((Document) value, subDocumentStructureOccurrences, arrayStructureOccurrences, parentDocumentOccurrences, parentDocumentOccurrencesPerFullKey, fullKey);
             } else if (value instanceof List) {
                 // Handle the list of items, considering only top-level items
                 ((List<?>) value).stream().distinct().forEach(item -> {
@@ -256,7 +410,7 @@ public class DynamicMongoService {
                         }
 
 
-                        analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, fullKey);
+                        analyzeDocument((Document) item, subDocumentStructureOccurrences, arrayStructureOccurrences, parentDocumentOccurrences, parentDocumentOccurrencesPerFullKey, fullKey);
                     }
                 });
             }
@@ -269,7 +423,8 @@ public class DynamicMongoService {
         String ret = document.entrySet().stream()
                 .filter(entry -> !(entry.getValue() instanceof Document)
                         && !(entry.getValue() instanceof List)
-                        && entry.getValue() != null)
+                        && entry.getValue() != null
+                        && !"_id".equals(entry.getKey()))
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining(","));
         if(ret.trim().isEmpty()) {
@@ -290,7 +445,7 @@ public class DynamicMongoService {
             ret = null;
         }
         if(ret != null) {
-            System.out.println(ret);
+            //System.out.println(ret);
         }
 
         return ret;
