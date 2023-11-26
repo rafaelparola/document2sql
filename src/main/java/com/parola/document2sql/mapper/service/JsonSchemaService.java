@@ -106,7 +106,7 @@ public class JsonSchemaService {
         // Creates the table primary key
         SqlColumn primaryKey = new SqlColumn();
         primaryKey.setName(parentTable.getName()+"_gen_uuid");
-        primaryKey.setIsPk(true);
+        primaryKey.setPk(true);
         primaryKey.setDataType("UUID");
         primaryKey.setSqlTable(parentTable);
         parentTable.setColumn(primaryKey);
@@ -141,10 +141,10 @@ public class JsonSchemaService {
     public void createSqlObjects(JsonNode schema, SqlTable parentTable) {
         // Creates the table primary key
 
-        if (!parentTable.getColumns().stream().anyMatch(SqlColumn::isIsPk)) {
+        if (!parentTable.getColumns().stream().anyMatch(SqlColumn::isPk)) {
             SqlColumn primaryKey = new SqlColumn();
             primaryKey.setName(parentTable.getName()+"_gen_uuid");
-            primaryKey.setIsPk(true);
+            primaryKey.setPk(true);
             primaryKey.setDataType("UUID");
             primaryKey.setSqlTable(parentTable);
             parentTable.setColumn(primaryKey);
@@ -169,8 +169,8 @@ public class JsonSchemaService {
                     for (Iterator<String> attribute = fieldNameNode.fieldNames(); attribute.hasNext();) {
                         String attributeName = attribute.next().replace(" ", "_");
                         if (attributeName == KEY) {
-                            column.setIsUnique(true);
-                            column.setIsNullable(false);
+                            column.setUniq(true);
+                            column.setNullable(false);
                         }
                     }
 

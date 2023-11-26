@@ -66,9 +66,9 @@ public class DynamicMongoService {
 
             for (String structureHash : structureMap.keySet()) {
                 Set<String> parentDocs = parentDocumentOccurrences.get(structureHash);
-                System.out.println(structureHash);
-                System.out.println(parentDocs);
-                System.out.println(parentDocumentOccurrencesPerFullKey.get(field));
+                //System.out.println(structureHash);
+                //System.out.println(parentDocs);
+                //System.out.println(parentDocumentOccurrencesPerFullKey.get(field));
                 if (parentDocs != null && parentDocs.size() > 1
                         && structureMap.values().stream().anyMatch(count -> count > 1)
                         && parentDocumentOccurrencesPerFullKey.get(field).values().stream().anyMatch(count -> count > 1)
@@ -136,7 +136,7 @@ public class DynamicMongoService {
 
                 SqlColumn foreignKey = new SqlColumn();
                 foreignKey.setName(parentTable.getName()+"_id");
-                foreignKey.setIsFk(true);
+                foreignKey.setFk(true);
                 foreignKey.setDataType("UUID");
                 foreignKey.setSqlTable(childTable);
                 childTable.setColumn(foreignKey);
@@ -161,7 +161,7 @@ public class DynamicMongoService {
                 // Creates the table primary key
                 SqlColumn primaryKey = new SqlColumn();
                 primaryKey.setName(sqlTable.getName()+"_gen_uuid");
-                primaryKey.setIsPk(true);
+                primaryKey.setPk(true);
                 primaryKey.setDataType("UUID");
                 primaryKey.setSqlTable(sqlTable);
                 sqlTable.setColumn(primaryKey);
@@ -181,14 +181,14 @@ public class DynamicMongoService {
 
                 SqlColumn foreignKeyOriginTable = new SqlColumn();
                 foreignKeyOriginTable.setName(parentTable.getName()+"_id");
-                foreignKeyOriginTable.setIsFk(true);
+                foreignKeyOriginTable.setFk(true);
                 foreignKeyOriginTable.setDataType("UUID");
                 foreignKeyOriginTable.setSqlTable(sqlTable);
                 sqlTable.setColumn(foreignKeyOriginTable);
 
                 SqlColumn foreignKeyReferencedTable = new SqlColumn();
                 foreignKeyReferencedTable.setName(childTable.getName()+"_id");
-                foreignKeyReferencedTable.setIsFk(true);
+                foreignKeyReferencedTable.setFk(true);
                 foreignKeyReferencedTable.setDataType("UUID");
                 foreignKeyReferencedTable.setSqlTable(sqlTable);
                 sqlTable.setColumn(foreignKeyReferencedTable);
@@ -221,7 +221,7 @@ public class DynamicMongoService {
 
                 SqlColumn foreignKey = new SqlColumn();
                 foreignKey.setName(parentTable.getName()+"_id");
-                foreignKey.setIsFk(true);
+                foreignKey.setFk(true);
                 foreignKey.setDataType("UUID");
                 foreignKey.setSqlTable(childTable);
                 childTable.setColumn(foreignKey);
@@ -254,8 +254,8 @@ public class DynamicMongoService {
                 //SqlColumn foreignKey = new SqlColumn();
                 List<SqlColumn> columns = childTable.getColumns();
                 for (SqlColumn column : columns) {
-                    if (column.isIsPk()) {
-                        column.setIsFk(true);
+                    if (column.isPk()) {
+                        column.setFk(true);
                         sqlColumnRepository.save(column);
                     }
                 }
@@ -286,7 +286,7 @@ public class DynamicMongoService {
                 // Creates the table primary key
                 SqlColumn primaryKey = new SqlColumn();
                 primaryKey.setName(sqlTable.getName()+"_gen_uuid");
-                primaryKey.setIsPk(true);
+                primaryKey.setPk(true);
                 primaryKey.setDataType("UUID");
                 primaryKey.setSqlTable(sqlTable);
                 sqlTable.setColumn(primaryKey);
@@ -306,14 +306,14 @@ public class DynamicMongoService {
 
                 SqlColumn foreignKeyOriginTable = new SqlColumn();
                 foreignKeyOriginTable.setName(parentTable.getName()+"_id");
-                foreignKeyOriginTable.setIsFk(true);
+                foreignKeyOriginTable.setFk(true);
                 foreignKeyOriginTable.setDataType("UUID");
                 foreignKeyOriginTable.setSqlTable(sqlTable);
                 sqlTable.setColumn(foreignKeyOriginTable);
 
                 SqlColumn foreignKeyReferencedTable = new SqlColumn();
                 foreignKeyReferencedTable.setName(childTable.getName()+"_id");
-                foreignKeyReferencedTable.setIsFk(true);
+                foreignKeyReferencedTable.setFk(true);
                 foreignKeyReferencedTable.setDataType("UUID");
                 foreignKeyReferencedTable.setSqlTable(sqlTable);
                 sqlTable.setColumn(foreignKeyReferencedTable);
@@ -342,7 +342,7 @@ public class DynamicMongoService {
 
                 SqlColumn foreignKey = new SqlColumn();
                 foreignKey.setName(parentTable.getName()+"_id");
-                foreignKey.setIsFk(true);
+                foreignKey.setFk(true);
                 foreignKey.setDataType("UUID");
                 foreignKey.setSqlTable(childTable);
                 childTable.setColumn(foreignKey);

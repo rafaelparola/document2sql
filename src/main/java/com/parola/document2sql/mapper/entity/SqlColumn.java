@@ -13,13 +13,13 @@ public class SqlColumn {
     @Column
     private String dataType;
     @Column(columnDefinition = "boolean default true")
-    private boolean isNullable = true;
+    private boolean nullable = true;
     @Column
-    private boolean isPk;
+    private boolean pk;
     @Column
-    private boolean isFk;
+    private boolean fk;
     @Column
-    private boolean isUnique;
+    private boolean uniq;
 
     @ManyToOne
     private SqlTable sqlTable;
@@ -28,11 +28,11 @@ public class SqlColumn {
     public SqlColumn(String name, String dataType, boolean isPk, boolean isFk, boolean isUnique, boolean isNullable, SqlTable sqlTable) {
         this.name = name;
         this.dataType = dataType;
-        this.isNullable = isNullable;
+        this.nullable = isNullable;
         this.sqlTable = sqlTable;
-        this.isPk = isPk;
-        this.isFk = isFk;
-        this.isUnique = isUnique;
+        this.pk = isPk;
+        this.fk = isFk;
+        this.uniq = isUnique;
     }
 
     public SqlColumn() {
@@ -55,12 +55,12 @@ public class SqlColumn {
         this.dataType = dataType;
     }
 
-    public boolean isIsNullable() {
-        return isNullable;
+    public boolean isNullable() {
+        return nullable;
     }
 
-    public void setIsNullable(boolean nullable) {
-        this.isNullable = nullable;
+    public void setNullable(boolean nullable) {
+        this.nullable = nullable;
     }
 
     public long getId() {
@@ -79,27 +79,27 @@ public class SqlColumn {
         this.sqlTable = sqlTable;
     }
 
-    public boolean isIsPk() {
-        return isPk;
+    public boolean isPk() {
+        return pk;
     }
 
-    public void setIsPk(boolean pk) {
-        this.isPk = pk;
+    public void setPk(boolean pk) {
+        this.pk = pk;
     }
 
-    public boolean isIsFk() {
-        return isFk;
+    public boolean isFk() {
+        return fk;
     }
 
-    public void setIsFk(boolean fk) {
-        this.isFk = fk;
+    public void setFk(boolean fk) {
+        this.fk = fk;
     }
 
-    public boolean isIsUnique() {
-        return isUnique;
+    public boolean isUniq() {
+        return uniq;
     }
 
-    public void setIsUnique(boolean unique) {
-        this.isUnique = unique;
+    public void setUniq(boolean unique) {
+        this.uniq = unique;
     }
 }

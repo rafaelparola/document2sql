@@ -68,19 +68,19 @@ public class SqlSchemaService {
             ddl.append(column.getName()).append(" ")
                     .append(column.getDataType());
 
-            if (column.isIsPk()) {
+            if (column.isPk()) {
                 ddl.append(" PRIMARY KEY DEFAULT gen_random_uuid()");
             }
 
-            if (!column.isIsNullable()) {
+            if (!column.isNullable()) {
                 ddl.append(" NOT NULL");
             }
 
-            if(column.isIsFk()) {
+            if(column.isFk()) {
                 foreignKey = column.getName();
             }
 
-            if (column.isIsUnique()) {
+            if (column.isUniq()) {
                 uniqueColumns.add(column.getName());
             }
 
